@@ -143,6 +143,7 @@ private:
   double tolerance_trans_, tolerance_rot_;
   double acc_max_trans_, acc_max_rot_;
   double rotation_correction_threshold_;  // We'll do rotation correction if we're at least this far from the goal
+  bool overshoot_goal_;                   // translational tolerance is based if the robot has trespassed the goal
 
   // diff drive only parameters
   double bubble_velocity_multiplier_;

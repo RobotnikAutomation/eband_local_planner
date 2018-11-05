@@ -120,6 +120,7 @@ void EBandTrajectoryCtrl::reconfigure(eband_local_planner::EBandPlannerConfig& c
 
   // diffferential drive parameters
   differential_drive_hack_ = config.differential_drive;
+  overshoot_goal_ = config.overshoot_goal;
   bubble_velocity_multiplier_ = config.bubble_velocity_multiplier;
   rotation_threshold_multiplier_ = config.rotation_threshold_multiplier;
   disallow_hysteresis_ = config.disallow_hysteresis;
@@ -183,6 +184,7 @@ bool EBandTrajectoryCtrl::getTwistDifferentialDrive(geometry_msgs::Twist& twist_
   {
     ROS_ERROR("Requesting feedforward command from not initialized planner. Please call initialize() before using this "
               "planner");
+    last_vel_ = robot_cmd;
     return false;
   }
 
@@ -190,6 +192,7 @@ bool EBandTrajectoryCtrl::getTwistDifferentialDrive(geometry_msgs::Twist& twist_
   if ((!band_set_) || (elastic_band_.size() < 2))
   {
     ROS_WARN("Requesting feedforward command from empty band.");
+    last_vel_ = robot_cmd;
     return false;
   }
 
@@ -233,10 +236,27 @@ bool EBandTrajectoryCtrl::getTwistDifferentialDrive(geometry_msgs::Twist& twist_
     // Get closer to the goal than the tolerance requires before starting the
     // final turn. The final turn may cause you to move slightly out of
     // position
-    if ((fabs(bubble_diff.linear.x) <= 0.6 * tolerance_trans_ &&
+    if ((overshoot_goal_ && fabs(bubble_diff.linear.x) <= 0.6 * tolerance_trans_ &&
+         ((last_vel_.linear.x > 0 && bubble_diff.linear.x < 0) ||
+          (last_vel_.linear.x < 0 && bubble_diff.linear.x > 0))) ||
+        (!overshoot_goal_ && fabs(bubble_diff.linear.x) <= 0.6 * tolerance_trans_ &&
          fabs(bubble_diff.linear.y) <= 0.6 * tolerance_trans_) ||
         in_final_goal_turn_)
     {
+      if ((overshoot_goal_ && fabs(bubble_diff.linear.x) <= 0.6 * tolerance_trans_ &&
+           ((last_vel_.linear.x > 0 && bubble_diff.linear.x < 0) ||
+            (last_vel_.linear.x < 0 && bubble_diff.linear.x > 0))))
+      {
+        ROS_INFO("Goal has been overshooted!");
+      }
+
+      if ((!overshoot_goal_ && fabs(bubble_diff.linear.x) <= 0.6 * tolerance_trans_ &&
+           fabs(bubble_diff.linear.y) <= 0.6 * tolerance_trans_) &&
+          !in_final_goal_turn_)
+      {
+        ROS_INFO("Arrived to goal with normal tolerance!");
+      }
+
       // Calculate orientation difference to goal orientation (not captured in bubble_diff)
       double robot_yaw = tf::getYaw(elastic_band_.at(0).center.pose.orientation);
       double goal_yaw = tf::getYaw(elastic_band_.at((int)elastic_band_.size() - 1).center.pose.orientation);
@@ -351,6 +371,7 @@ bool EBandTrajectoryCtrl::getTwistDifferentialDrive(geometry_msgs::Twist& twist_
   }
 
   twist_cmd = robot_cmd;
+  last_vel_ = robot_cmd;
   ROS_DEBUG("Final command: %f, %f", twist_cmd.linear.x, twist_cmd.angular.z);
   return true;
 }
