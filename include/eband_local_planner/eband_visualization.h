@@ -38,7 +38,6 @@
 #ifndef EBAND_VISUALIZATION_H_
 #define EBAND_VISUALIZATION_H_
 
-
 #include <ros/ros.h>
 
 // classes wich are part of this pkg
@@ -67,139 +66,147 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+namespace eband_local_planner
+{
+/**
+ * @class ConversionsAndTypes
+ * @brief Implements type-convrsions and types used by elastic-band optimizer and according ros-wrapper class
+ */
+class EBandVisualization
+{
+public:
+  // typedefs
+  enum Color
+  {
+    blue,
+    red,
+    green
+  };
 
-namespace eband_local_planner{
+  // methods
 
   /**
-   * @class ConversionsAndTypes
-   * @brief Implements type-convrsions and types used by elastic-band optimizer and according ros-wrapper class
+   * @brief Default constructor
    */
-  class EBandVisualization{
+  EBandVisualization();
 
-    public:
+  /**
+   * @brief Construct and initializes eband visualization
+   */
+  EBandVisualization(ros::NodeHandle& pn, costmap_2d::Costmap2DROS* costmap_ros);
 
-      // typedefs
-      enum Color {blue, red, green};
+  /**
+   * @brief Default destructor
+   */
+  ~EBandVisualization();
 
+  /**
+   * @brief Initializes the visualization class
+   * @param name The name to give this instance (important for publishing)
+   */
+  void initialize(ros::NodeHandle& pn, costmap_2d::Costmap2DROS* costmap_ros);
 
-      // methods
+  /**
+   * @brief Reconfigures the parameters of the planner
+   * @param config The dynamic reconfigure configuration
+   */
+  void reconfigure(EBandPlannerConfig& config);
 
-      /**
-       * @brief Default constructor
-       */
-      EBandVisualization();
+  /**
+   * @brief publishes the bubbles (Position and Expansion) in a band as Marker-Array
+   * @param the name space under which the markers shall be bublished
+   * @param the shape of the markers
+   * @param the band which shall be published
+   */
+  void publishBand(std::string marker_name_space, std::vector<Bubble> band);
 
-      /**
-       * @brief Construct and initializes eband visualization
-       */
-      EBandVisualization(ros::NodeHandle& pn, costmap_2d::Costmap2DROS* costmap_ros);
+  /**
+   * @brief publishes a single bubble as a Marker
+   * @param the name space under which the markers shall be bublished
+   * @param the shape of the markers
+   * @param the bubble which shall be published
+   */
+  void publishBubble(std::string marker_name_space, int marker_id, Bubble bubble);
 
-      /**
-       * @brief Default destructor
-       */
-      ~EBandVisualization();
+  /**
+   * @brief publishes a single bubble as a Marker
+   * @param the name space under which the markers shall be bublished
+   * @param the shape of the markers
+   * @param the bubble which shall be published
+   * @param color in which the bubble shall be displayed
+   */
+  void publishBubble(std::string marker_name_space, int marker_id, Color marker_color, Bubble bubble);
 
-      /**
-       * @brief Initializes the visualization class
-       * @param name The name to give this instance (important for publishing)
-       */
-      void initialize(ros::NodeHandle& pn, costmap_2d::Costmap2DROS* costmap_ros);
+  /**
+   * @brief publishes the list of forces along the band as Marker-Array
+   * @param the name space under which the markers shall be bublished
+   * @param the shape of the markers
+   * @param the list of forces which shall be published
+   * @param the list of bubbles on which the forces act (needed to get origin of force-vector)
+   */
+  void publishForceList(std::string marker_name_space, std::vector<geometry_msgs::WrenchStamped> forces,
+                        std::vector<Bubble> band);
 
-      /**
-       * @brief Reconfigures the parameters of the planner
-       * @param config The dynamic reconfigure configuration
-       */
-      void reconfigure(EBandPlannerConfig& config);
+  /**
+   * @brief publishes a single force as a Marker
+   * @param the name space under which the markers shall be bublished
+   * @param the shape of the markers
+   * @param the force which shall be published
+   */
+  void publishForce(std::string marker_name_space, int id, Color marker_color, geometry_msgs::WrenchStamped force,
+                    Bubble bubble);
 
-      /**
-       * @brief publishes the bubbles (Position and Expansion) in a band as Marker-Array
-       * @param the name space under which the markers shall be bublished
-       * @param the shape of the markers
-       * @param the band which shall be published
-       */
-      void publishBand(std::string marker_name_space, std::vector<Bubble> band);
+private:
+  // external objects
+  costmap_2d::Costmap2DROS* costmap_ros_;  ///<@brief pointer to costmap - needed to retrieve information about robot
+                                           ///geometry
 
-      /**
-       * @brief publishes a single bubble as a Marker
-       * @param the name space under which the markers shall be bublished
-       * @param the shape of the markers
-       * @param the bubble which shall be published
-       */
-      void publishBubble(std::string marker_name_space, int marker_id, Bubble bubble);
+  // Topics & Services
+  ros::Publisher bubble_pub_;      ///<@brief publishes markers to visualize bubbles of elastic band ("modified global
+                                   ///plan")
+  ros::Publisher one_bubble_pub_;  ///<@brief publishes markers to visualize bubbles of elastic band ("modified global
+                                   ///plan")
 
-      /**
-       * @brief publishes a single bubble as a Marker
-       * @param the name space under which the markers shall be bublished
-       * @param the shape of the markers
-       * @param the bubble which shall be published
-       * @param color in which the bubble shall be displayed
-       */
-      void publishBubble(std::string marker_name_space, int marker_id, Color marker_color, Bubble bubble);
+  // flags
+  bool initialized_;
 
-      /**
-       * @brief publishes the list of forces along the band as Marker-Array
-       * @param the name space under which the markers shall be bublished
-       * @param the shape of the markers
-       * @param the list of forces which shall be published
-       * @param the list of bubbles on which the forces act (needed to get origin of force-vector)
-       */
-      void publishForceList(std::string marker_name_space, std::vector<geometry_msgs::WrenchStamped> forces, std::vector<Bubble> band);
+  // parameters
+  double marker_lifetime_;
 
-      /**
-       * @brief publishes a single force as a Marker
-       * @param the name space under which the markers shall be bublished
-       * @param the shape of the markers
-       * @param the force which shall be published
-       */
-      void publishForce(std::string marker_name_space, int id, Color marker_color, geometry_msgs::WrenchStamped force, Bubble bubble);
+  // methods
 
-    private:
+  /**
+   * @brief converts a bubble into a Marker msg - this is visualization-specific
+   * @param the bubble to convert
+   * @param reference to hand back the marker
+   * @param name space under which the marker shall be published
+   * @param object id of the marker in its name space
+   */
+  void bubbleToMarker(Bubble bubble, visualization_msgs::Marker& marker, std::string marker_name_space, int marker_id,
+                      Color marker_color);
 
-      // external objects
-      costmap_2d::Costmap2DROS* costmap_ros_; ///<@brief pointer to costmap - needed to retrieve information about robot geometry
+  /**
+   * @brief converts the haeding of a bubble into a Arrow-Marker msg - this is visualization-specific
+   * @param the bubble to convert
+   * @param reference to hand back the marker
+   * @param name space under which the marker shall be published
+   * @param object id of the marker in its name space
+   */
+  void bubbleHeadingToMarker(Bubble bubble, visualization_msgs::Marker& marker, std::string marker_name_space,
+                             int marker_id, Color marker_color);
 
-      // Topics & Services
-      ros::Publisher bubble_pub_; ///<@brief publishes markers to visualize bubbles of elastic band ("modified global plan")
-      ros::Publisher one_bubble_pub_; ///<@brief publishes markers to visualize bubbles of elastic band ("modified global plan")
-
-      // flags
-      bool initialized_;
-
-      // parameters
-      double marker_lifetime_;
-
-
-      // methods
-
-      /**
-       * @brief converts a bubble into a Marker msg - this is visualization-specific
-       * @param the bubble to convert
-       * @param reference to hand back the marker
-       * @param name space under which the marker shall be published
-       * @param object id of the marker in its name space
-       */
-      void bubbleToMarker(Bubble bubble, visualization_msgs::Marker& marker, std::string marker_name_space, int marker_id, Color marker_color);
-
-      /**
-       * @brief converts the haeding of a bubble into a Arrow-Marker msg - this is visualization-specific
-       * @param the bubble to convert
-       * @param reference to hand back the marker
-       * @param name space under which the marker shall be published
-       * @param object id of the marker in its name space
-       */
-      void bubbleHeadingToMarker(Bubble bubble, visualization_msgs::Marker& marker, std::string marker_name_space, int marker_id, Color marker_color);
-
-      /**
-       * @brief converts a wrench into a Marker msg - this is visualization-specific
-       * @param the wrench to convert
-       * @param origin of force or wrench
-       * @param reference to hand back the marker
-       * @param name space under which the marker shall be published
-       * @param object id of the marker in its name space
-       * @param color in which the marker shall be displayed
-       */
-      void forceToMarker(geometry_msgs::WrenchStamped wrench, geometry_msgs::Pose wrench_origin, visualization_msgs::Marker& marker, std::string marker_name_space, int marker_id, Color marker_color);
-
-  };
+  /**
+   * @brief converts a wrench into a Marker msg - this is visualization-specific
+   * @param the wrench to convert
+   * @param origin of force or wrench
+   * @param reference to hand back the marker
+   * @param name space under which the marker shall be published
+   * @param object id of the marker in its name space
+   * @param color in which the marker shall be displayed
+   */
+  void forceToMarker(geometry_msgs::WrenchStamped wrench, geometry_msgs::Pose wrench_origin,
+                     visualization_msgs::Marker& marker, std::string marker_name_space, int marker_id,
+                     Color marker_color);
+};
 };
 #endif
