@@ -238,7 +238,7 @@ bool EBandTrajectoryCtrl::getTwistDifferentialDrive(geometry_msgs::Twist& twist_
     // position
     if ((overshoot_goal_ && fabs(bubble_diff.linear.x) <= 0.6 * tolerance_trans_ &&
          ((last_vel_.linear.x > 0 && bubble_diff.linear.x < 0) ||
-          (last_vel_.linear.x < 0 && bubble_diff.linear.x > 0))) ||
+          (last_vel_.linear.x < 0 && bubble_diff.linear.x > 0) || (last_vel_.linear.x == 0 && std::abs(bubble_diff.linear.x) < tolerance_trans_)  )) ||
         (!overshoot_goal_ && fabs(bubble_diff.linear.x) <= 0.6 * tolerance_trans_ &&
          fabs(bubble_diff.linear.y) <= 0.6 * tolerance_trans_) ||
         in_final_goal_turn_)
