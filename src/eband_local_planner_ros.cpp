@@ -143,6 +143,14 @@ void EBandPlannerROS::reconfigureCallback(EBandPlannerConfig& config, uint32_t l
     ROS_ERROR("Reconfigure CB called before eband visualizer initialization");
 }
 
+bool areEqualPoseStamped(geometry_msgs::PoseStamped one, geometry_msgs::PoseStamped other)
+{
+  return one.header.frame_id == other.header.frame_id and one.pose.position.x == other.pose.position.x and
+         one.pose.position.y == other.pose.position.y and one.pose.position.z == other.pose.position.z and
+         one.pose.orientation.x == other.pose.orientation.x and one.pose.orientation.y == other.pose.orientation.y and
+         one.pose.orientation.z == other.pose.orientation.z and one.pose.orientation.w == other.pose.orientation.w;
+}
+
 // set global plan to wrapper and pass it to eband
 bool EBandPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan)
 {
@@ -151,6 +159,17 @@ bool EBandPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& ori
   {
     ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
     return false;
+  }
+
+  bool has_to_reset_final_turn = true;
+  if (not global_plan_.empty() and not orig_global_plan.empty() and
+      areEqualPoseStamped(global_plan_.back(), orig_global_plan.back()))
+  {
+    has_to_reset_final_turn = false;
+  }
+  else
+  {
+    ROS_INFO("New plan has a different goal, reseting final goal turn");
   }
 
   // reset the global plan
@@ -203,6 +222,8 @@ bool EBandPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& ori
 
   // set goal as not reached
   goal_reached_ = false;
+  if (has_to_reset_final_turn == true)
+    eband_trj_ctrl_->setInFinalGoalTurn(false);
 
   return true;
 }

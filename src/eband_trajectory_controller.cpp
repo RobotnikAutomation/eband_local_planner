@@ -169,6 +169,11 @@ double angularDiff(const geometry_msgs::Twist& heading, const geometry_msgs::Pos
     return d - 2 * pi;
 }
 
+void EBandTrajectoryCtrl::setInFinalGoalTurn(bool value)
+{
+  in_final_goal_turn_ = value;
+}
+
 bool EBandTrajectoryCtrl::getTwistDifferentialDrive(geometry_msgs::Twist& twist_cmd, bool& goal_reached)
 {
   goal_reached = false;

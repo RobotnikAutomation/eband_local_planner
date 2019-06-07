@@ -125,6 +125,11 @@ public:
    */
   bool getTwist(geometry_msgs::Twist& twist_cmd, bool& goal_reached);
   bool getTwistDifferentialDrive(geometry_msgs::Twist& twist_cmd, bool& goal_reached);
+  /**
+   * @brief sets internal control of final turning
+   * @param if it is in final goal turn
+   */
+  void setInFinalGoalTurn(bool value);
 
 private:
   // pointer to external objects (do NOT delete object)
